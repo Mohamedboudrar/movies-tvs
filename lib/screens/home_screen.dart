@@ -1,11 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mobileapp/screens/profileScreen.dart';
+import 'package:mobileapp/screens/series_screen.dart';
 import '../models/movie_model.dart';
 import '../models/tv_model.dart';
 import '../services/tmdb_api_service.dart';
 import '../widgets/movie_card.dart';
 import '../widgets/tv_card.dart';
 import 'favorites_screen.dart';
+import 'filmsScreen.dart';
 import 'login_screen.dart';
 import 'search_screen.dart';
 
@@ -93,46 +97,84 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.deepPurple,
               ),
-              child: const Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              child: Center(
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseAuth.instance.currentUser == null
+                      ? null
+                      : FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final data = snapshot.data?.data() as Map<String, dynamic>?;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.white,
+                          backgroundImage: data != null && data['avatar'] != null
+                              ? AssetImage(
+                            'avatars/Memoji-${data['avatar']}.png',
+                          )
+                              : null,
+                          child: data == null || data['avatar'] == null
+                              ? const Icon(
+                            Icons.person,
+                            size: 36,
+                            color: Colors.deepPurple,
+                          )
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          data?['name'] ?? 'Utilisateur',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
+
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Mon profil'),
-              onTap: () {
-                Navigator.pop(context); // close drawer
-                /*Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );*/
-              },
-              trailing: Icon(Icons.arrow_right_rounded),
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.favorite),
-              title: const Text('Mes favoris'),
+              trailing: const Icon(Icons.arrow_right_rounded),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const FavouritesScreen(),
+                    builder: (_) => const ProfileScreen(),
                   ),
                 );
               },
-              trailing: Icon(Icons.arrow_right_rounded),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.favorite),
+              title: const Text('Mes favoris'),
+              trailing: const Icon(Icons.arrow_right_rounded),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FavouritesScreen(),
+                  ),
+                );
+              },
             ),
 
             const Divider(),
@@ -147,9 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 await _logout(context);
               },
-
             ),
-
           ],
         ),
       ),
@@ -177,13 +217,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.all(16),
                     children: [
                       // Movies section
-                      const Text(
-                        'Films Populaires',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Films Populaires',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const FilmsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
+
                       const SizedBox(height: 16),
                       SizedBox(
                         height: 280,
@@ -204,13 +261,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 32),
 
                       // TV Series section
-                      const Text(
-                        'Séries TV Populaires',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Séries TV Populaires',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SeriesScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
+
                       const SizedBox(height: 16),
                       SizedBox(
                         height: 280,

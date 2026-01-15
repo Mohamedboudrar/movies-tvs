@@ -82,6 +82,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Icon(
+                      Icons.tv,
+                      size: 80,
+                      color: Colors.deepPurple,
+                    ),
+                    const SizedBox(height: 16),
                   // Titre
                   const Text(
                     'Connexion',

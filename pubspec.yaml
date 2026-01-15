@@ -41,6 +41,9 @@ dependencies:
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
   flutter_dotenv: ^5.1.0
+  url_launcher: ^6.2.6
+  youtube_player_flutter: ^9.1.3
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +71,27 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+  assets:
+    - avatars/Memoji-1.png
+    - avatars/Memoji-2.png
+    - avatars/Memoji-3.png
+    - avatars/Memoji-4.png
+    - avatars/Memoji-5.png
+    - avatars/Memoji-6.png
+    - avatars/Memoji-7.png
+    - avatars/Memoji-8.png
+    - avatars/Memoji-9.png
+    - avatars/Memoji-10.png
+    - avatars/Memoji-11.png
+    - avatars/Memoji-12.png
+    - avatars/Memoji-13.png
+    - avatars/Memoji-14.png
+    - avatars/Memoji-15.png
+    - avatars/Memoji-16.png
+    - avatars/Memoji-17.png
+    - avatars/Memoji-18.png
+    - avatars/Memoji-19.png
+    - avatars/Memoji-20.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

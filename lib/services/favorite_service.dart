@@ -13,54 +13,67 @@ class FavouritesService {
     return user.uid;
   }
 
-  /// ADD favourite
+  DocumentReference get _userDoc =>
+      _firestore.collection('users').doc(_uid);
+
+  CollectionReference get _favouritesCol =>
+      _userDoc.collection('favourites');
+
+  /// ADD favourite + increment count
   Future<void> addFavourite({
     required int id,
     required String title,
     required String posterPath,
-    required String type, // "movie" or "tv"
+    required String type,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favourites')
-        .doc(id.toString()) // prevents duplicates
-        .set({
-      'id': id,
-      'title': title,
-      'posterPath': posterPath,
-      'type': type,
-      'createdAt': FieldValue.serverTimestamp(),
+    final favDoc = _favouritesCol.doc(id.toString());
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(favDoc);
+
+      if (!snapshot.exists) {
+        transaction.set(favDoc, {
+          'id': id,
+          'title': title,
+          'posterPath': posterPath,
+          'type': type,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        transaction.update(_userDoc, {
+          'favouritesCount': FieldValue.increment(1),
+        });
+      }
     });
   }
 
-  /// REMOVE favourite
+  /// REMOVE favourite + decrement count
   Future<void> removeFavourite(int id) async {
-    await _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favourites')
-        .doc(id.toString())
-        .delete();
+    final favDoc = _favouritesCol.doc(id.toString());
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(favDoc);
+
+      if (snapshot.exists) {
+        transaction.delete(favDoc);
+        transaction.update(_userDoc, {
+          'favouritesCount': FieldValue.increment(-1),
+        });
+      }
+    });
   }
 
-  /// CHECK if favourite (live)
+  /// CHECK favourite
   Stream<bool> isFavourite(int id) {
-    return _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favourites')
+    return _favouritesCol
         .doc(id.toString())
         .snapshots()
         .map((doc) => doc.exists);
   }
 
-  /// GET all favourites
+  /// GET favourites
   Stream<QuerySnapshot> getFavourites() {
-    return _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favourites')
+    return _favouritesCol
         .orderBy('createdAt', descending: true)
         .snapshots();
   }

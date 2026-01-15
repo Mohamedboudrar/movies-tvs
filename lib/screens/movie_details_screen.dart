@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../models/movie_model.dart';
 import '../services/tmdb_api_service.dart';
+
 
 class MovieDetailsScreen extends StatefulWidget {
   final Movie movie;
@@ -24,40 +25,53 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     _loadTrailer();
   }
 
+
   Future<void> _loadTrailer() async {
+    debugPrint('🎬 [Trailer] Loading trailer for movie ID: ${widget.movie.id}');
+
     try {
-      final trailerKey = await _apiService.getMovieTrailer(widget.movie.id);
-      
-      if (mounted && trailerKey != null && trailerKey.isNotEmpty) {
-        final videoId = YoutubePlayerController.convertUrlToId(trailerKey) ?? trailerKey;
-        
-        final controller = YoutubePlayerController.fromVideoId(
-          videoId: videoId,
-          autoPlay: false,
-          params: const YoutubePlayerParams(
-            showControls: true,
-            mute: false,
-            showFullscreenButton: true,
-            loop: false,
-          ),
-        );
-        
-        if (mounted) {
-          setState(() {
-            _youtubeController = controller;
-            _hasTrailer = true;
-            _isLoadingTrailer = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _hasTrailer = false;
-            _isLoadingTrailer = false;
-          });
-        }
+      final trailerKey =
+      await _apiService.getMovieTrailer(widget.movie.id);
+
+      debugPrint('📦 [Trailer] TMDB returned key: $trailerKey');
+
+      if (!mounted) {
+        debugPrint('⚠️ [Trailer] Widget not mounted anymore');
+        return;
       }
-    } catch (e) {
+
+      if (trailerKey == null || trailerKey.isEmpty) {
+        debugPrint('❌ [Trailer] No trailer key available');
+
+        setState(() {
+          _hasTrailer = false;
+          _isLoadingTrailer = false;
+        });
+        return;
+      }
+
+      debugPrint('✅ [Trailer] Using videoId: $trailerKey');
+
+      final controller = YoutubePlayerController(
+        initialVideoId: trailerKey,
+        flags: const YoutubePlayerFlags(
+          autoPlay: false,
+          mute: false,
+        ),
+      );
+
+      debugPrint('🎮 [Trailer] YoutubePlayerController created');
+
+      setState(() {
+        _youtubeController = controller;
+        _hasTrailer = true;
+        _isLoadingTrailer = false;
+      });
+    } catch (e, stackTrace) {
+      debugPrint('💥 [Trailer] Exception occurred');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
+
       if (mounted) {
         setState(() {
           _hasTrailer = false;
@@ -67,9 +81,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     }
   }
 
+
   @override
   void dispose() {
-    _youtubeController?.close();
+    _youtubeController?.dispose();
     super.dispose();
   }
 
@@ -105,7 +120,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.grey[300],
+                              color: Colors.deepPurple,
                               child: const Center(
                                 child: Icon(Icons.movie, size: 80),
                               ),
@@ -226,8 +241,17 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           child: YoutubePlayer(
                             controller: _youtubeController!,
-                            aspectRatio: 16 / 9,
-                          ),
+                            showVideoProgressIndicator: true,
+                            progressIndicatorColor: Colors.red,
+                            onReady: () {
+                              debugPrint('▶️ [Trailer] Player ready');
+                            },
+                            onEnded: (data) {
+                              debugPrint('⏹️ [Trailer] Video ended: ${data.videoId}');
+                            },
+                          )
+
+
                         ),
                         const SizedBox(height: 24),
                       ],

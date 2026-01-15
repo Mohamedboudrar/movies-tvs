@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../models/tv_model.dart';
 import '../services/tmdb_api_service.dart';
 
@@ -15,6 +15,7 @@ class TvDetailsScreen extends StatefulWidget {
 class _TvDetailsScreenState extends State<TvDetailsScreen> {
   final TmdbApiService _apiService = TmdbApiService();
   YoutubePlayerController? _youtubeController;
+
   bool _isLoadingTrailer = true;
   bool _hasTrailer = false;
 
@@ -25,39 +26,42 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
   }
 
   Future<void> _loadTrailer() async {
+    debugPrint('📺 [Trailer] Loading TV trailer for ID: ${widget.tvSeries.id}');
+
     try {
-      final trailerKey = await _apiService.getTvSeriesTrailer(widget.tvSeries.id);
-      
-      if (mounted && trailerKey != null && trailerKey.isNotEmpty) {
-        final videoId = YoutubePlayerController.convertUrlToId(trailerKey) ?? trailerKey;
-        
-        final controller = YoutubePlayerController.fromVideoId(
-          videoId: videoId,
-          autoPlay: false,
-          params: const YoutubePlayerParams(
-            showControls: true,
+      final trailerKey =
+      await _apiService.getTvSeriesTrailer(widget.tvSeries.id);
+
+      debugPrint('📦 [Trailer] TMDB returned key: $trailerKey');
+
+      if (!mounted || trailerKey == null || trailerKey.isEmpty) {
+        debugPrint('❌ [Trailer] No trailer available');
+
+        setState(() {
+          _hasTrailer = false;
+          _isLoadingTrailer = false;
+        });
+        return;
+      }
+
+      debugPrint('✅ [Trailer] Using videoId: $trailerKey');
+
+      setState(() {
+        _youtubeController = YoutubePlayerController(
+          initialVideoId: trailerKey, // TMDB key == YouTube video ID
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
             mute: false,
-            showFullscreenButton: true,
-            loop: false,
           ),
         );
-        
-        if (mounted) {
-          setState(() {
-            _youtubeController = controller;
-            _hasTrailer = true;
-            _isLoadingTrailer = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _hasTrailer = false;
-            _isLoadingTrailer = false;
-          });
-        }
-      }
-    } catch (e) {
+        _hasTrailer = true;
+        _isLoadingTrailer = false;
+      });
+    } catch (e, stackTrace) {
+      debugPrint('💥 [Trailer] Error loading TV trailer');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
+
       if (mounted) {
         setState(() {
           _hasTrailer = false;
@@ -69,7 +73,8 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
 
   @override
   void dispose() {
-    _youtubeController?.close();
+    debugPrint('🧹 [Trailer] Disposing TV YoutubePlayerController');
+    _youtubeController?.dispose();
     super.dispose();
   }
 
@@ -98,42 +103,41 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
               ),
               background: widget.tvSeries.backdropPath != null
                   ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          widget.tvSeries.backdropUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[300],
-                              child: const Center(
-                                child: Icon(Icons.tv, size: 80),
-                              ),
-                            );
-                          },
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Container(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    widget.tvSeries.backdropUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey[300],
                       child: const Center(
                         child: Icon(Icons.tv, size: 80),
                       ),
                     ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+                  : Container(
+                color: Colors.grey[300],
+                child: const Center(
+                  child: Icon(Icons.tv, size: 80),
+                ),
+              ),
             ),
           ),
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -150,14 +154,6 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                             width: 120,
                             height: 180,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 120,
-                                height: 180,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.tv),
-                              );
-                            },
                           ),
                         ),
                       const SizedBox(width: 16),
@@ -171,7 +167,8 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                                     color: Colors.amber, size: 24),
                                 const SizedBox(width: 4),
                                 Text(
-                                  widget.tvSeries.voteAverage.toStringAsFixed(1),
+                                  widget.tvSeries.voteAverage
+                                      .toStringAsFixed(1),
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -202,14 +199,11 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 24),
+
                   if (_isLoadingTrailer)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
+                    const Center(child: CircularProgressIndicator())
                   else if (_hasTrailer && _youtubeController != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,38 +220,36 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           child: YoutubePlayer(
                             controller: _youtubeController!,
-                            aspectRatio: 16 / 9,
+                            showVideoProgressIndicator: true,
+                            progressIndicatorColor: Colors.red,
+                            onReady: () => debugPrint(
+                                '▶️ [Trailer] TV player ready'),
                           ),
                         ),
                         const SizedBox(height: 24),
                       ],
                     )
                   else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.grey),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Aucune bande-annonce disponible',
+                              style: TextStyle(color: Colors.grey),
+                            ),
                           ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Colors.grey),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Aucune bande-annonce disponible',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                        ],
+                      ),
                     ),
+
                   const Text(
                     'Synopsis',
                     style: TextStyle(
@@ -270,10 +262,7 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                     widget.tvSeries.overview.isNotEmpty
                         ? widget.tvSeries.overview
                         : 'Aucun synopsis disponible.',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                 ],
               ),
