@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: data == null || data['avatar'] == null
                               ? const Icon(
                             Icons.person,
-                            size: 36,
+                            size: 38,
                             color: Colors.deepPurple,
                           )
                               : null,

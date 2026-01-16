@@ -122,7 +122,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                             return Container(
                               color: Colors.deepPurple,
                               child: const Center(
-                                child: Icon(Icons.movie, size: 80),
+                                child: Icon(Icons.movie, size: 70),
                               ),
                             );
                           },

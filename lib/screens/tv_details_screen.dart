@@ -111,7 +111,7 @@ class _TvDetailsScreenState extends State<TvDetailsScreen> {
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey[300],
                       child: const Center(
-                        child: Icon(Icons.tv, size: 80),
+                        child: Icon(Icons.tv, size: 70),
                       ),
                     ),
                   ),
